@@ -12,7 +12,12 @@ namespace Brigand
 	{
 		public static void* Alloc(int size)
 		{
-			return (void*)Marshal.AllocHGlobal(size);
+			IntPtr p = Marshal.AllocHGlobal(size);
+			for (int i = 0; i < size; i++)
+			{
+				Marshal.WriteByte(p, i, 0);
+			}
+			return (void*)p;
 		}
 
 		public static void Free(void* block)

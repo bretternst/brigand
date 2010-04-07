@@ -192,7 +192,6 @@ namespace Brigand
 			QueueMessage(new IrcMessage(null, "NICK", _nickname));
 
 			_connected = true;
-			OnConnected();
 
 			while (true)
 			{
@@ -266,6 +265,11 @@ namespace Brigand
 
 		private void OnMessageReceived(IrcMessage message)
 		{
+			if (message.Command == "376")
+			{
+				OnConnected();
+			}
+
 			if (MessageReceived != null)
 				MessageReceived(this, new IrcMessageEventArgs(message));
 		}
