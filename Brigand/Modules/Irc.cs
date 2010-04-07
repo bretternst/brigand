@@ -119,6 +119,10 @@ namespace Brigand
 		private void conn_Connected(object sender, IrcEventArgs e)
 		{
 			this.WriteTraceMessage("Connected to IRC Server");
+			if (!string.IsNullOrEmpty(this.UserMode))
+			{
+				this.Mode(IrcTarget.Parse(this.Nickname), this.UserMode);
+			}
 			OnConnected();
 		}
 
@@ -216,6 +220,9 @@ namespace Brigand
 		[ModuleProperty("maxTextLength")]
 		public int MaxTextLength { get; set; }
 
+		[ModuleProperty("userMode")]
+		public string UserMode { get; set; }
+
 		public string TextSplitChars { get { return _textSplitChars; } set { _textSplitChars = value; } }
 
 		public bool IsConnected { get { return _conn.IsConnected; } }
@@ -271,14 +278,14 @@ namespace Brigand
 			_conn.QueueMessage(new IrcMessage(null, "INVITE", nickname, channel));
 		}
 
-		public void Mode(IrcTarget target, string modes, string[] modeParameters)
+		public void Mode(IrcTarget target, string modes, params string[] modeParameters)
 		{
 			string[] parameters = new string[modeParameters.Length + 2];
 			parameters[0] = target.ToString();
 			parameters[1] = modes;
 			for (int i = 0; i < modeParameters.Length; i++)
 				parameters[i + 2] = modeParameters[i];
-			_conn.QueueMessage(new IrcMessage(target.IsChannel ? target.Channel : target.Nickname, "MODE", parameters));
+			_conn.QueueMessage(new IrcMessage(null, "MODE", parameters));
 		}
 
 		public void Kick(string channel, string nickname, string reason)
