@@ -24,7 +24,7 @@ namespace Brigand
 		private StreamReader _rstream;
 		private StreamWriter _wstream;
 		private bool _connected;
-		private Queue<string> _sendQueue;
+		private Queue<IrcMessage> _sendQueue;
 		private System.Threading.Timer _sendTimer;
 		private int _sendPace = 250;
 		private DateTime _lastSendTime = DateTime.MinValue;
@@ -83,13 +83,12 @@ namespace Brigand
 			QueueMessage(new IrcMessage(null, "QUIT", quitMessage));
 		}
 
-		public void QueueMessage(IrcMessage message)
+		public void QueueMessage(string message)
 		{
-			QueueMessage(message.ToString());
-			OnMessageSent(message);
+			QueueMessage(IrcMessage.Parse(message));
 		}
 
-		public void QueueMessage(string message)
+		public void QueueMessage(IrcMessage message)
 		{
 			if (_sendQueue.Count > 0)
 			{
@@ -130,12 +129,13 @@ namespace Brigand
 			}
 		}
 
-		private void SendMessage(string msg)
+		private void SendMessage(IrcMessage message)
 		{
-			msg = _sendFilter.Replace(msg, "\uffff");
+			string msg = _sendFilter.Replace(message.ToString(), "\uffff");
 			_wstream.WriteLine(msg);
 			_wstream.Flush();
 			_lastSendTime = DateTime.Now;
+			OnMessageSent(message);
 		}
 
 		private IrcMessage RecvMessage()
@@ -175,7 +175,7 @@ namespace Brigand
 			{
 				if (_sendQueue.Count > 0)
 				{
-					string msg = _sendQueue.Dequeue();
+					IrcMessage msg = _sendQueue.Dequeue();
 					try
 					{
 						SendMessage(msg);
@@ -190,8 +190,6 @@ namespace Brigand
 
 			QueueMessage(new IrcMessage(null, "USER", _userName, _localhost, "*", _fullName));
 			QueueMessage(new IrcMessage(null, "NICK", _nickname));
-
-			_connected = true;
 
 			while (true)
 			{
@@ -227,7 +225,7 @@ namespace Brigand
 			_stream = null;
 			_tcpClient = null;
 			_connected = false;
-			_sendQueue = new Queue<string>();
+			_sendQueue = new Queue<IrcMessage>();
 			_sendTimer = null;
 		}
 
@@ -267,6 +265,7 @@ namespace Brigand
 		{
 			if (message.Command == "376")
 			{
+				_connected = true;
 				OnConnected();
 			}
 
