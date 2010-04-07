@@ -243,6 +243,14 @@ namespace Brigand
 
 			_modules.Reverse();
 			_modules.ForEach((module) => module.DoStop());
+			_modules.ForEach((module) =>
+				{
+					var disposable = module as IDisposable;
+					if (disposable != null)
+					{
+						disposable.Dispose();
+					}
+				});
 		}
 	}
 }
