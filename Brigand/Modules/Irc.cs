@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace Brigand
 {
@@ -208,12 +209,20 @@ namespace Brigand
 			base.OnStop();
 		}
 
-		protected override void LoadConfig(System.Xml.Linq.XElement moduleEl)
+		protected override void LoadConfig(XElement moduleEl)
 		{
 			base.LoadConfig(moduleEl);
 
 			_startup = (from startupEl in moduleEl.Elements("startup")
 						select startupEl.Value).ToList();
+		}
+
+		protected override void SaveConfig(XElement moduleEl)
+		{
+			base.SaveConfig(moduleEl);
+
+			moduleEl.Add(from command in _startup
+						 select new XElement("startup", command));
 		}
 
 		internal void Open()
