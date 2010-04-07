@@ -109,7 +109,7 @@ namespace Brigand
 
 			try
 			{
-				doc.Save(_configPath);
+				doc.Save(_configPath, SaveOptions.None);
 			}
 			catch (Exception ex)
 			{
