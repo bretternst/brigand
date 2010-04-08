@@ -8,7 +8,6 @@ namespace Brigand
 	public sealed class Timer : IDisposable
 	{
 		private Dispatcher _dispatcher;
-		private string _blah = null;
 		private EventHandler _handler;
 		private object _state;
 		private System.Threading.Timer _timer;
@@ -18,7 +17,6 @@ namespace Brigand
 			_dispatcher = disp;
 			_handler = handler;
 			_state = state;
-			_blah = "wat";
 
 			_timer = new System.Threading.Timer((o) =>
 			{
