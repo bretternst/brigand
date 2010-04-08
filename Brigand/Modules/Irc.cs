@@ -195,7 +195,7 @@ namespace Brigand
 			if (String.IsNullOrEmpty(this.Localhost))
 				this.Localhost = Environment.MachineName;
 
-			_conn = new IrcConnection(this.Server, this.Port, this.Nickname, this.UserName, this.FullName, this.Localhost);
+			_conn = new IrcConnection(this.Dispatcher, this.Server, this.Port, this.Nickname, this.UserName, this.FullName, this.Localhost);
 			_conn.Connected += conn_Connected;
 			_conn.Disconnected += conn_Disconnected;
 			_conn.MessageReceived += conn_MessageReceived;

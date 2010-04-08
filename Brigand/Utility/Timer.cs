@@ -7,24 +7,34 @@ namespace Brigand
 {
 	public sealed class Timer : IDisposable
 	{
+		private Dispatcher _dispatcher;
+		private string _blah = null;
+		private EventHandler _handler;
+		private object _state;
 		private System.Threading.Timer _timer;
 
 		public Timer(Dispatcher disp, EventHandler handler, int delay, int interval, object state)
 		{
+			_dispatcher = disp;
+			_handler = handler;
+			_state = state;
+			_blah = "wat";
+
 			_timer = new System.Threading.Timer((o) =>
 			{
-				disp.Invoke((Action)(() =>
+				var timer = o as Timer;
+				timer._dispatcher.BeginInvoke((Action)(() =>
 				{
 					try
 					{
-						handler(null, new CallbackEventArgs(state));
+						timer._handler(null, new CallbackEventArgs(timer._state));
 					}
 					catch (SystemException ex)
 					{
 						System.Diagnostics.Trace.WriteLine(ex.ToString());
 					}
 				}));
-			}, null, delay, interval);
+			}, this, delay, interval);
 		}
 
 		public Timer(Dispatcher disp, EventHandler handler, int delay, object state)

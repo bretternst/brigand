@@ -8,22 +8,6 @@ namespace Brigand
 {
 	public class Dispatcher
 	{
-		[ThreadStatic]
-		private static Dispatcher _dispatcher;
-
-		public static Dispatcher Current
-		{
-			get
-			{
-				if (_dispatcher == null)
-				{
-					_dispatcher = new Dispatcher();
-				}
-
-				return _dispatcher;
-			}
-		}
-
 		private Queue<Action> _actions;
 		private AutoResetEvent _waitHandle;
 		private volatile bool _running;
@@ -34,7 +18,7 @@ namespace Brigand
 			_waitHandle = new AutoResetEvent(false);
 		}
 
-		public void Invoke(Action action)
+		public void BeginInvoke(Action action)
 		{
 			lock (_actions)
 			{

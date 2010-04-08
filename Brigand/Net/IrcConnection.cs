@@ -12,7 +12,7 @@ namespace Brigand
 	{
 		private static Regex _sendFilter = new Regex("[\u000a\u000d]",RegexOptions.Compiled);
 
-		private Dispatcher _dispatcher = Dispatcher.Current;
+		private Dispatcher _dispatcher;
 		private string _server;
 		private int _port;
 		private string _nickname;
@@ -42,7 +42,7 @@ namespace Brigand
 
 		public event ErrorEventHandler Error;
 
-		public IrcConnection(string server, int port, string nickname, string userName, string fullName, string localhost)
+		public IrcConnection(Dispatcher dispatcher, string server, int port, string nickname, string userName, string fullName, string localhost)
 		{
 			if (string.IsNullOrEmpty(server))
 				throw new ArgumentNullException("server");
@@ -51,6 +51,7 @@ namespace Brigand
 			if (string.IsNullOrEmpty(nickname))
 				throw new ArgumentNullException("nickname");
 
+			_dispatcher = dispatcher;
 			_server = server;
 			_port = port;
 			_nickname = nickname;
@@ -198,18 +199,18 @@ namespace Brigand
 					IrcMessage msg = RecvMessage();
 
 					if (msg != null)
-						_dispatcher.Invoke((Action)(() => ProcessMessage(msg)));
+						_dispatcher.BeginInvoke((Action)(() => ProcessMessage(msg)));
 					else
 						throw new IOException();
 				}
 				catch (ObjectDisposedException)
 				{
-					_dispatcher.Invoke((Action)(() => CloseConnection()));
+					_dispatcher.BeginInvoke((Action)(() => CloseConnection()));
 					break;
 				}
 				catch (IOException)
 				{
-					_dispatcher.Invoke((Action)(() => CloseConnection()));
+					_dispatcher.BeginInvoke((Action)(() => CloseConnection()));
 					break;
 				}
 			}

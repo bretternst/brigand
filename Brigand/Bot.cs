@@ -119,6 +119,8 @@ namespace Brigand
 
 		public void Run()
 		{
+			this.Dispatcher = new Dispatcher();
+
 			_modules.ForEach((module) =>
 				{
 					module.Bot = this;
@@ -131,8 +133,7 @@ namespace Brigand
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
 			this.Irc.Open();
 
-			this.Dispatcher = Dispatcher.Current;
-			Dispatcher.Run();
+			this.Dispatcher.Run();
 		}
 
 		public void Stop()
