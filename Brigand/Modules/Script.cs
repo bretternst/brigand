@@ -126,6 +126,15 @@ namespace Brigand
 
 				try
 				{
+					content = content.Trim();
+					if (content.StartsWith("<!DOCTYPE"))
+					{
+						int firstCloseBracket = content.IndexOf('>');
+						if (firstCloseBracket >= 0 && content.Length > firstCloseBracket + 1)
+						{
+							content = content.Substring(firstCloseBracket + 1);
+						}
+					}
 					var doc = XDocument.Parse(content);
 					var preEl = doc.Descendants(doc.Root.Name.Namespace + "pre").FirstOrDefault();
 					if (preEl == null)
