@@ -36,6 +36,11 @@ namespace Brigand
 
 		private void Irc_PrivateMessage(object sender, IrcChatEventArgs e)
 		{
+			if (e.IsSelf)
+			{
+				return;
+			}
+
 			string line = e.Text.Trim();
 
 			if (line.StartsWith(this.Prefix, StringComparison.Ordinal) && line.Length > this.Prefix.Length)

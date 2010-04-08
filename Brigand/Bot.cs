@@ -49,6 +49,8 @@ namespace Brigand
 
 		public Channels Channels { get; private set; }
 
+		public Script Script { get; private set; }
+
 		public void LoadConfig()
 		{
 			if (string.IsNullOrEmpty(_configPath))
@@ -90,6 +92,7 @@ namespace Brigand
 			this.Channels = this.GetModule(typeof(Channels)) as Channels;
 			if (this.Channels == null)
 				throw new InvalidOperationException("There must be a configured Channels module.");
+			this.Script = this.GetModule(typeof(Script)) as Script;
 		}
 
 		public void SaveConfig()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using System.IO;
 using IronPython.Hosting;
 
 namespace Brigand
@@ -72,6 +73,7 @@ namespace Brigand
 			}
 
 			this.Irc.PrivateMessage += new EventHandler<IrcChatEventArgs>(Irc_PrivateMessage);
+			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
 		}
 
 		protected override void OnStop()
@@ -79,30 +81,6 @@ namespace Brigand
 			_engine.Dispose();
 
 			base.OnStop();
-		}
-
-		private void Irc_PrivateMessage(object sender, IrcChatEventArgs e)
-		{
-			if (e.IsSelf)
-			{
-				return;
-			}
-
-			string line = e.Text.Trim();
-			if(line.StartsWith(this.Prefix) && line.Length > this.Prefix.Length)
-			{
-				try
-				{
-					this.Security.Demand(e.From, this.ExecutePermission);
-				}
-				catch (System.Security.SecurityException)
-				{
-					// Just ignore unauthorized commands.
-					return;
-				}
-
-				this.Execute(e.ReplyTo, line.Substring(this.Prefix.Length));
-			}
 		}
 
 		private void Execute(IrcTarget replyTo, string line)
@@ -132,6 +110,95 @@ namespace Brigand
 			if (output != null)
 			{
 				this.Irc.Say(replyTo, output.ToString());
+			}
+		}
+
+		private void Load(string location)
+		{
+			string scriptCode = "";
+
+			location = location.Trim();
+			if (location.StartsWith("http://", StringComparison.InvariantCultureIgnoreCase) ||
+				location.StartsWith("https://", StringComparison.InvariantCultureIgnoreCase))
+			{
+				var client = new System.Net.WebClient();
+				string content = client.DownloadString(location);
+
+				try
+				{
+					var doc = XDocument.Parse(content);
+					var preEl = doc.Descendants(doc.Root.Name.Namespace + "pre").FirstOrDefault();
+					if (preEl == null)
+					{
+						throw new Exception("Could not locate PRE element in the specified document.");
+					}
+					scriptCode = preEl.Value;
+				}
+				catch(System.Xml.XmlException)
+				{
+					scriptCode = content;
+				}
+			}
+			else
+			{
+				scriptCode = File.ReadAllText(location);
+			}
+
+			_engine.Execute(scriptCode);
+		}
+
+		private void Irc_PrivateMessage(object sender, IrcChatEventArgs e)
+		{
+			if (e.IsSelf)
+			{
+				return;
+			}
+
+			string line = e.Text.Trim();
+			if (line.StartsWith(this.Prefix) && line.Length > this.Prefix.Length)
+			{
+				try
+				{
+					this.Security.Demand(e.From, this.ExecutePermission);
+				}
+				catch (System.Security.SecurityException)
+				{
+					// Just ignore unauthorized commands.
+					return;
+				}
+
+				this.Execute(e.ReplyTo, line.Substring(this.Prefix.Length));
+			}
+		}
+
+		private void Aliases_CallAlias(object sender, AliasEventArgs e)
+		{
+			if (e.Name == "load")
+			{
+				try
+				{
+					this.Security.Demand(e.From, this.ExecutePermission);
+				}
+				catch (System.Security.SecurityException)
+				{
+					return;
+				}
+
+				if (e.Arguments.Count == 1)
+				{
+					try
+					{
+						this.Load(e.Arguments[0]);
+					}
+					catch (Exception ex)
+					{
+						this.Irc.Say(e.ReplyTo, string.Format("ERROR: {0}", ex.Message));
+					}
+				}
+				else
+				{
+					this.Irc.Say(e.ReplyTo, "Usage: !load <url|path>");
+				}
 			}
 		}
 	}
