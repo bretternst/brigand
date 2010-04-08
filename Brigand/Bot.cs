@@ -233,7 +233,14 @@ namespace Brigand
 		{
 			if (e.Name.ToLower() == "quit")
 			{
-				Security.Demand(e.From, "bot");
+				try
+				{
+					Security.Demand(e.From, "bot");
+				}
+				catch (System.Security.SecurityException)
+				{
+					return;
+				}
 				this.Stop();
 			}
 		}
