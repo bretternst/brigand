@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C# Express 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrigandCmd", "BrigandCmd\BrigandCmd.csproj", "{20D82533-3B25-4E52-837D-36E61D5DB907}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brigand", "Brigand\Brigand.csproj", "{C7441855-6C35-4A04-BB7F-C0251D70C5D6}"
