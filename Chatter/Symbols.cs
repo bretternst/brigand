@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 
 namespace Brigand.MarkovModel
@@ -64,7 +61,7 @@ namespace Brigand.MarkovModel
 		}
 	}
 
-	enum PunctuationType : byte
+	internal enum PunctuationType : byte
 	{
 		Period = 0,
 		Comma = 1,
@@ -74,11 +71,11 @@ namespace Brigand.MarkovModel
 		QuestionMark = 5
 	}
 
-	class PunctuationSymbol : Symbol
+	internal class PunctuationSymbol : Symbol
 	{
 		public const SymbolType SymType = SymbolType.Punctuation;
 
-		private const string PUNCTUATION_MARKS = ".,;:!?";
+		private const string PunctuationMarks = ".,;:!?";
 
 		public PunctuationType Type { get; set; }
 
@@ -89,12 +86,12 @@ namespace Brigand.MarkovModel
 
 		public PunctuationSymbol(char ch) : base()
 		{
-			Type = (PunctuationType)PUNCTUATION_MARKS.IndexOf(ch);
+			Type = (PunctuationType)PunctuationMarks.IndexOf(ch);
 		}
 
 		public static bool IsPunctuationChar(char ch)
 		{
-			return PUNCTUATION_MARKS.IndexOf(ch) >= 0;		
+			return PunctuationMarks.IndexOf(ch) >= 0;		
 		}
 
 		public bool IsTerminating
@@ -108,7 +105,7 @@ namespace Brigand.MarkovModel
 
 		public override string ToString()
 		{
-			return new string(PUNCTUATION_MARKS[(int)Type],1);
+			return new string(PunctuationMarks[(int)Type],1);
 		}
 
 		public override int GetHashCode()
@@ -123,7 +120,7 @@ namespace Brigand.MarkovModel
 		}
 	}
 
-	class WordSymbol : Symbol
+	internal class WordSymbol : Symbol
 	{
 		public const SymbolType SymType = SymbolType.Word;
 
@@ -134,10 +131,10 @@ namespace Brigand.MarkovModel
 			Word = word;
 		}
 
-		private const string WORD_CHARS = "-_$#@'+=*&/";
+		private const string WordChars = "-_$#@'+=*&/";
 		public static bool IsWordChar(char ch)
 		{
-			return char.IsLetterOrDigit(ch) || WORD_CHARS.IndexOf(ch) >= 0;
+			return char.IsLetterOrDigit(ch) || WordChars.IndexOf(ch) >= 0;
 		}
 
 		public override string ToString()

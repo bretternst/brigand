@@ -1,22 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using Brigand.MarkovModel;
+
+using Floe.Net;
 
 namespace Brigand
 {
 	public class Chatter : BotModule
 	{
-		private Model model;
+		private Model _model;
 
-		const string ATTN_CHARS = ",:";
-		const string NO_REPLY = null;
-		const string TRAIN_ALIAS = "train";
-		const string STATS_ALIAS = "brainstats";
-		const string TRAIN_COMPLETE = "OM NOM NOM!";
-		const string TRAIN_FAILED = "Could not train: {0}";
+		private const string AttnChars = ",:";
+		private const string NoReply = null;
+		private const string TrainAlias = "train";
+		private const string StatsAlias = "brainstats";
+		private const string TrainComplete = "OM NOM NOM!";
+		private const string TrainFailed = "Could not train: {0}";
 
 		[ModuleProperty("brainFile")]
 		public string BrainFile { get; set; }
@@ -27,25 +26,25 @@ namespace Brigand
 			while (!sr.EndOfStream)
 			{
 				string s = sr.ReadLine();
-				model.Learn(s);
+				_model.Learn(s);
 			}
 			sr.Close();
 		}
 
 		public void Save()
 		{
-			model.Save(this.BrainFile);
+			_model.Save(this.BrainFile);
 		}
 
 		public void Clear()
 		{
-			model = null;
-			model = new Model();
+			_model = null;
+			_model = new Model();
 		}
 
 		protected override void OnInit()
 		{
-			this.Irc.PrivateMessage += new EventHandler<IrcChatEventArgs>(PrivateMessage);
+			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(PrivateMessage);
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(AliasModule_CallAlias);
 
 			if (this.BrainFile == null)
@@ -56,11 +55,11 @@ namespace Brigand
 		{
 			if (File.Exists(this.BrainFile))
 			{
-				model = Model.Load(this.BrainFile);
+				_model = Model.Load(this.BrainFile);
 			}
 			else
 			{
-				model = new Model();
+				_model = new Model();
 			}
 		}
 
@@ -73,52 +72,52 @@ namespace Brigand
 		{
 			if (!e.Handled)
 			{
-				if (e.Name == TRAIN_ALIAS && e.Arguments.Count == 1)
+				if (e.Name == TrainAlias && e.Arguments.Count == 1)
 				{
 					try
 					{
 						this.Train(e.Arguments[0]);
-						Irc.Say(e.ReplyTo, TRAIN_COMPLETE);
+						Irc.PrivateMessage(e.ReplyTo, TrainComplete);
 					}
 					catch (IOException ex)
 					{
-						Irc.Say(e.ReplyTo, string.Format(TRAIN_FAILED, ex.Message));
+						Irc.PrivateMessage(e.ReplyTo, string.Format(TrainFailed, ex.Message));
 					}
 				}
-				else if (e.Name == STATS_ALIAS)
+				else if (e.Name == StatsAlias)
 				{
-					Irc.Say(e.ReplyTo, "Total unique symbols: " + model.SymbolCount);
-					Irc.Say(e.ReplyTo, "Total unique tuples: " + model.TotalTupleCount);
-					Irc.Say(e.ReplyTo, "Total nodes: " + model.TotalNodeCount);
-					Irc.Say(e.ReplyTo, "Memory usage: " + model.TotalBytesUsed);
+					Irc.PrivateMessage(e.ReplyTo, "Total unique symbols: " + _model.SymbolCount);
+					Irc.PrivateMessage(e.ReplyTo, "Total unique tuples: " + _model.TotalTupleCount);
+					Irc.PrivateMessage(e.ReplyTo, "Total nodes: " + _model.TotalNodeCount);
+					Irc.PrivateMessage(e.ReplyTo, "Memory usage: " + _model.TotalBytesUsed);
 				}
 			}
 		}
 
-		private void PrivateMessage(object sender, IrcChatEventArgs e)
+		private void PrivateMessage(object sender, IrcDialogEventArgs e)
 		{
-			if (e.Target.IsChannel && !e.IsSelf)
+			if (e.To.Type == IrcTargetType.Channel)
 			{
 				string raw = e.Text.Trim();
 				if (raw.Length > this.Irc.Nickname.Length &&
 					raw.StartsWith(this.Irc.Nickname, StringComparison.CurrentCultureIgnoreCase) &&
-					ATTN_CHARS.IndexOf(raw[this.Irc.Nickname.Length]) >= 0)
+					AttnChars.IndexOf(raw[this.Irc.Nickname.Length]) >= 0)
 				{
 					string text = raw.Substring(this.Irc.Nickname.Length + 1).Trim();
-					string reply = model.Query(text);
+					string reply = _model.Query(text);
 					if (!string.IsNullOrEmpty(reply))
 					{
-						this.Irc.Say(e.Target.Channel, reply);
+						this.Irc.PrivateMessage(e.To, reply);
 					}
 					else
 					{
-						if (!string.IsNullOrEmpty(NO_REPLY))
-							this.Irc.Say(e.Target.Channel, NO_REPLY);
+						if (!string.IsNullOrEmpty(NoReply))
+							this.Irc.PrivateMessage(e.To, NoReply);
 					}
 				}
 				else
 				{
-					model.Learn(raw);
+					_model.Learn(raw);
 				}
 			}
 		}

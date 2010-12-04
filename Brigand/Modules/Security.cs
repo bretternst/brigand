@@ -1,15 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.ComponentModel;
-using System.Security;
-using System.Xml.Linq;
 using System.Globalization;
+using System.Security;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using Floe.Net;
 
 namespace Brigand
 {
+	#region User class
+
+	public class User
+	{
+		internal User()
+		{
+		}
+
+		public User(string name, string mask, params string[] permissions)
+		{
+			this.Name = name;
+			this.Mask = mask;
+			this.Permissions = new HashSet<string>(permissions);
+		}
+
+		[ModuleProperty("name")]
+		public string Name { get; private set; }
+
+		[ModuleProperty("mask")]
+		public string Mask { get; set; }
+
+		[ModuleProperty("permissions")]
+		[TypeConverter(typeof(HashSetOfStringTypeConverter))]
+		public HashSet<string> Permissions { get; private set; }
+
+		public bool HasPermissions(params string[] permissions)
+		{
+			if (this.Permissions.Contains("*") ||
+				(permissions.Length == 1 && permissions[0] == "*"))
+			{
+				return true;
+			}
+			if (permissions.Length == 0 ||
+				(permissions.Length == 1 && string.IsNullOrEmpty(permissions[0])))
+			{
+				return false;
+			}
+			HashSet<string> perms = new HashSet<string>(permissions);
+			return perms.IsSubsetOf(this.Permissions);
+		}
+	}
+
+	#endregion
+
 	public sealed class Security : BotModule
 	{
 		private List<User> _users = new List<User>();
@@ -30,16 +73,16 @@ namespace Brigand
 			}
 		}
 
-		public User Recognize(IIrcPeer peer)
+		public User Recognize(IrcPeer peer)
 		{
-			if (string.IsNullOrEmpty(peer.NickUserHost))
+			if (string.IsNullOrEmpty(peer.Prefix))
 			{
 				return null;
 			}
 
 			foreach (User user in _users)
 			{
-				if (Regex.IsMatch(peer.NickUserHost, "^" + user.Mask + "$"))
+				if (Regex.IsMatch(peer.Prefix, "^" + user.Mask + "$"))
 				{
 					return user;
 				}
@@ -47,7 +90,7 @@ namespace Brigand
 			return null;
 		}
 
-		public void Demand(IIrcPeer peer, params string[] permissions)
+		public void Demand(IrcPeer peer, params string[] permissions)
 		{
 			if (permissions == null || permissions.Length == 0)
 			{
@@ -63,7 +106,7 @@ namespace Brigand
 			if (user == null)
 			{
 				throw new SecurityException(string.Format(CultureInfo.InvariantCulture,
-					"Permission denied for {0} to {1}", string.Join(",", permissions), peer.NickUserHost));
+					"Permission denied for {0} to {1}", string.Join(",", permissions), peer.Prefix));
 			}
 
 			Demand(user, permissions);
@@ -134,46 +177,6 @@ namespace Brigand
 				BotModule.SaveProperties(user, userEl);
 				moduleEl.Add(userEl);
 			}
-		}
-	}
-
-	public class User
-	{
-		internal User()
-		{
-		}
-
-		public User(string name, string mask, params string[] permissions)
-		{
-			this.Name = name;
-			this.Mask = mask;
-			this.Permissions = new HashSet<string>(permissions);
-		}
-
-		[ModuleProperty("name")]
-		public string Name { get; private set; }
-
-		[ModuleProperty("mask")]
-		public string Mask { get; set; }
-
-		[ModuleProperty("permissions")]
-		[TypeConverter(typeof(HashSetOfStringTypeConverter))]
-		public HashSet<string> Permissions { get; private set; }
-
-		public bool HasPermissions(params string[] permissions)
-		{
-			if (this.Permissions.Contains("*") ||
-				(permissions.Length == 1 && permissions[0] == "*"))
-			{
-				return true;
-			}
-			if (permissions.Length == 0 ||
-				(permissions.Length == 1 && string.IsNullOrEmpty(permissions[0])))
-			{
-				return false;
-			}
-			HashSet<string> perms = new HashSet<string>(permissions);
-			return perms.IsSubsetOf(this.Permissions);
 		}
 	}
 }

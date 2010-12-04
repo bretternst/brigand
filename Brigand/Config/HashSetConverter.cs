@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Brigand
 {
@@ -11,17 +10,25 @@ namespace Brigand
 		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
 		{
 			if (sourceType == typeof(string))
+			{
 				return true;
+			}
 			else
+			{
 				return base.CanConvertFrom(context, sourceType);
+			}
 		}
 
 		public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
 		{
 			if (destinationType == typeof(string))
+			{
 				return true;
+			}
 			else
+			{
 				return base.CanConvertTo(context, destinationType);
+			}
 		}
 
 		public override object ConvertFrom(ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value)

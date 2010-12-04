@@ -1,10 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Brigand
 {
+	#region CallbackEventArgs class
+
+	public class CallbackEventArgs : EventArgs
+	{
+		private object _state;
+
+		public object State { get { return _state; } }
+
+		public CallbackEventArgs(object state)
+			: base()
+		{
+			_state = state;
+		}
+
+		public CallbackEventArgs()
+			: base()
+		{
+		}
+	}
+	
+	#endregion
+
 	public sealed class Timer : IDisposable
 	{
 		private Dispatcher _dispatcher;
@@ -55,24 +74,6 @@ namespace Brigand
 			{
 				_timer.Dispose();
 			}
-		}
-	}
-
-	public class CallbackEventArgs : EventArgs
-	{
-		private object _state;
-
-		public object State { get { return _state; } }
-
-		public CallbackEventArgs(object state)
-			: base()
-		{
-			_state = state;
-		}
-
-		public CallbackEventArgs()
-			: base()
-		{
 		}
 	}
 }

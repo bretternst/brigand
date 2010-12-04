@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using Floe.Net;
 using IronPython.Hosting;
 
 namespace Brigand
@@ -72,7 +72,7 @@ namespace Brigand
 				}
 			}
 
-			this.Irc.PrivateMessage += new EventHandler<IrcChatEventArgs>(Irc_PrivateMessage);
+			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(Irc_PrivateMessage);
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
 		}
 
@@ -99,17 +99,17 @@ namespace Brigand
 				}
 				catch (Exception ex)
 				{
-					this.Irc.Say(replyTo, string.Format("ERROR: {0}", ex.Message));
+					this.Irc.PrivateMessage(replyTo, string.Format("ERROR: {0}", ex.Message));
 				}
 			}
 			catch (Exception ex)
 			{
-				this.Irc.Say(replyTo, string.Format("ERROR: {0}", ex.Message));
+				this.Irc.PrivateMessage(replyTo, string.Format("ERROR: {0}", ex.Message));
 			}
 
 			if (output != null)
 			{
-				this.Irc.Say(replyTo, output.ToString());
+				this.Irc.PrivateMessage(replyTo, output.ToString());
 			}
 		}
 
@@ -156,9 +156,9 @@ namespace Brigand
 			_engine.Execute(scriptCode);
 		}
 
-		private void Irc_PrivateMessage(object sender, IrcChatEventArgs e)
+		private void Irc_PrivateMessage(object sender, IrcDialogEventArgs e)
 		{
-			if (e.IsSelf)
+			if (string.Compare(e.From.Nickname, this.Irc.Nickname, true) == 0)
 			{
 				return;
 			}
@@ -176,7 +176,7 @@ namespace Brigand
 					return;
 				}
 
-				this.Execute(e.ReplyTo, line.Substring(this.Prefix.Length));
+				this.Execute(e.To.Type == IrcTargetType.Channel ? e.To : new IrcTarget(e.From), line.Substring(this.Prefix.Length));
 			}
 		}
 
@@ -201,12 +201,12 @@ namespace Brigand
 					}
 					catch (Exception ex)
 					{
-						this.Irc.Say(e.ReplyTo, string.Format("ERROR: {0}", ex.Message));
+						this.Irc.PrivateMessage(e.ReplyTo, string.Format("ERROR: {0}", ex.Message));
 					}
 				}
 				else
 				{
-					this.Irc.Say(e.ReplyTo, "Usage: !load <url|path>");
+					this.Irc.PrivateMessage(e.ReplyTo, "Usage: !load <url|path>");
 				}
 			}
 		}

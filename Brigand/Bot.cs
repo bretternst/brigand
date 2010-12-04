@@ -1,24 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
 using System.Diagnostics;
-using System.ComponentModel;
-using System.Threading;
 using System.IO;
 using System.Reflection;
 using System.Xml.Linq;
-using System.Linq;
+
+using Floe.Net;
 
 namespace Brigand
 {
 	public sealed class Bot : IDisposable
 	{
-		private const string CONFIG_PATH = "bot.config";
-		private const string MODULES_PATH = "Modules";
+		private const string DefaultConfigPath = "bot.config";
+		private const string ModulesPath = "Modules";
 
 		private string _configPath;
 		private List<BotModule> _modules = new List<BotModule>();
+		private List<string> _startup = new List<string>();
 
 		public Bot() :
 			this(null)
@@ -30,18 +28,37 @@ namespace Brigand
 			_configPath = configPath;
 			if (string.IsNullOrEmpty(_configPath))
 			{
-				_configPath = CONFIG_PATH;
+				_configPath = DefaultConfigPath;
 			}
 
 			this.LoadModuleAssemblies();
 			this.LoadConfig();
 		}
 
-		public string Name { get; set; }
+		[ModuleProperty("name")]
+		public string Nickname { get; set; }
+
+		[ModuleProperty("server")]
+		public string Server { get; set; }
+
+		[ModuleProperty("port")]
+		public int Port { get; set; }
+
+		[ModuleProperty("username")]
+		public string Username { get; set; }
+
+		[ModuleProperty("fullName")]
+		public string FullName { get; set; }
+
+		[ModuleProperty("localHost")]
+		public string LocalHost { get; set; }
+
+		[ModuleProperty("autoReconnect")]
+		public bool AutoReconnect { get; set; }
 
 		public Dispatcher Dispatcher { get; private set; }
 
-		public Irc Irc { get; private set; }
+		public IrcSession Irc { get; private set; }
 
 		public Security Security { get; private set; }
 
@@ -54,7 +71,9 @@ namespace Brigand
 		public void LoadConfig()
 		{
 			if (string.IsNullOrEmpty(_configPath))
+			{
 				throw new BotConfigException("No configuration path was provided.");
+			}
 
 			XDocument doc;
 			try
@@ -68,37 +87,47 @@ namespace Brigand
 
 			var root = doc.Root;
 			if (root.Name != "bot")
+			{
 				throw new BotConfigException("Missing 'bot' element.");
+			}
 
-			var nameAt = root.Attribute("name");
-			if (nameAt == null || string.IsNullOrEmpty(nameAt.Value))
-				throw new BotConfigException("Missing 'name' attribute.");
-			this.Name = nameAt.Value;
+			BotModule.LoadProperties(this, root);
+
+			foreach (var startupEl in root.Elements("startup"))
+			{
+				_startup.Add(startupEl.Value);
+			}
 
 			foreach(var moduleEl in root.Elements("module"))
 			{
 				this.LoadModule(moduleEl);
 			}
 
-			this.Irc = this.GetModule(typeof(Irc)) as Irc;
-			if (this.Irc == null)
-				throw new InvalidOperationException("There must be a configured Irc module.");
+			this.Irc = new IrcSession();
+			BotModule.LoadProperties(this.Irc, root);
+
 			this.Security = this.GetModule(typeof(Security)) as Security;
 			if (this.Security == null)
+			{
 				throw new InvalidOperationException("There must be a configured Security module.");
+			}
 			this.Aliases = this.GetModule(typeof(Aliases)) as Aliases;
 			if (this.Aliases == null)
+			{
 				throw new InvalidOperationException("There must be a configured Aliases module.");
+			}
 			this.Channels = this.GetModule(typeof(Channels)) as Channels;
 			if (this.Channels == null)
+			{
 				throw new InvalidOperationException("There must be a configured Channels module.");
+			}
 			this.Script = this.GetModule(typeof(Script)) as Script;
 		}
 
 		public void SaveConfig()
 		{
-			var rootEl = new XElement("bot",
-				new XAttribute("name", this.Name));
+			var rootEl = new XElement("bot");
+			BotModule.SaveProperties(this, rootEl);
 
 			_modules.ForEach((module) =>
 				{
@@ -124,6 +153,8 @@ namespace Brigand
 		{
 			this.Dispatcher = new Dispatcher();
 
+			this.Irc.StateChanged += new EventHandler<EventArgs>(Irc_StateChanged);
+
 			_modules.ForEach((module) =>
 				{
 					module.Bot = this;
@@ -132,9 +163,8 @@ namespace Brigand
 
 			_modules.ForEach((module) => module.DoStart());
 
-			this.Irc.Quit += new EventHandler<IrcEventArgs>(irc_Quit);
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
-			this.Irc.Open();
+			this.Irc.Open(this.Server, this.Port, false, this.Nickname, this.Username, this.LocalHost, this.FullName, null, true);
 
 			this.Dispatcher.Run();
 		}
@@ -177,7 +207,7 @@ namespace Brigand
 
 		private void LoadModuleAssemblies()
 		{
-			foreach (string asmFile in Directory.GetFiles(MODULES_PATH, "*.dll", SearchOption.TopDirectoryOnly))
+			foreach (string asmFile in Directory.GetFiles(ModulesPath, "*.dll", SearchOption.TopDirectoryOnly))
 			{
 				Assembly.LoadFrom(Path.GetFullPath(asmFile));
 			}
@@ -187,12 +217,16 @@ namespace Brigand
 		{
 			var typeAt = moduleEl.Attribute("type");
 			if (typeAt == null || string.IsNullOrEmpty(typeAt.Value))
+			{
 				throw new BotConfigException("Missing 'type' attribute.");
+			}
 
 			string typeName = typeAt.Value;
 			var type = this.GetModuleType(typeName);
 			if (type == null)
+			{
 				throw new BotConfigException(string.Format("Could not find type {0}.", typeName));
+			}
 
 			BotModule module;
 			try
@@ -205,7 +239,9 @@ namespace Brigand
 			}
 
 			if (module == null)
+			{
 				throw new BotConfigException(string.Format("Type {0} does not derive from BotModule.", typeName));
+			}
 
 			module.DoLoadConfig(moduleEl);
 			_modules.Add(module);
@@ -224,9 +260,19 @@ namespace Brigand
 			return null;
 		}
 
-		private void irc_Quit(object sender, IrcEventArgs e)
+		private void Irc_StateChanged(object sender, EventArgs e)
 		{
-			this.Stop();
+			if (this.Irc.State == IrcSessionState.Disconnected)
+			{
+				this.Stop();
+			}
+			else if (this.Irc.State == IrcSessionState.Connected)
+			{
+				foreach (var s in _startup)
+				{
+					this.Irc.Send(s);
+				}
+			}
 		}
 
 		private void Aliases_CallAlias(object sender, AliasEventArgs e)
@@ -249,8 +295,8 @@ namespace Brigand
 		{
 			this.SaveConfig();
 
-			if (this.Irc.IsConnected)
-				this.Irc.SignOut();
+			if (this.Irc.State == IrcSessionState.Connected)
+				this.Irc.Quit("Shutting down");
 
 			_modules.Reverse();
 			_modules.ForEach((module) => module.DoStop());

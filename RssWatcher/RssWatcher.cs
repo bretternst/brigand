@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.ComponentModel;
 using System.Xml.Linq;
+
+using Floe.Net;
 
 namespace Brigand
 {
 	public sealed class RssWatcher : BotModule
 	{
-		private const string LINK_ALIAS_NAME = "link";
-		private const string LINK_DESC_NAME = "details";
+		private const string LinkAliasName = "link";
+		private const string LinkDescName = "details";
+		private const int LineLength = 420;
 
 		private List<FeedItem> _current;
 		private Dictionary<string,RssFeed> _feeds;
@@ -30,15 +30,31 @@ namespace Brigand
 
 		public void LinkRequest(object sender, AliasEventArgs e)
 		{
-			if (!e.Handled && (e.Name == LINK_ALIAS_NAME || e.Name == LINK_DESC_NAME) && e.Target.IsChannel)
+			if (!e.Handled && (e.Name == LinkAliasName || e.Name == LinkDescName) && e.To.Type == IrcTargetType.Channel)
 			{
 				int idx = 0;
 				if (e.Arguments.Count > 0)
+				{
 					int.TryParse(e.Arguments[0], out idx);
+				}
 				if (idx < 0 || idx > _current.Count - 1)
-					this.Irc.Say(e.Target.Channel, "No such item exists.");
+				{
+					this.Irc.PrivateMessage(e.ReplyTo, "No such item exists.");
+				}
 				else
-					this.Irc.Say(e.Target.Channel, e.Name == LINK_ALIAS_NAME ? _current[idx].Link : _current[idx].Description.StripHtml(), IrcTextFormat.Split);
+				{
+					if (e.Name == LinkAliasName)
+					{
+						this.Irc.PrivateMessage(e.ReplyTo, _current[idx].Link);
+					}
+					else
+					{
+						foreach (var s in _current[idx].Description.StripHtml().WordBreak(LineLength))
+						{
+							this.Irc.PrivateMessage(e.ReplyTo, s);
+						}
+					}
+				}
 			}
 		}
 
@@ -114,9 +130,13 @@ namespace Brigand
 				{
 					foreach (var item in feed.CatchUp())
 					{
+						string output = string.Format("[{0}({1})] {2}", name, tempList.Count.ToString(), item.Title.StripHtml());
 						foreach (var chan in Channels.CurrentChannels)
 						{
-							Irc.Say(chan, string.Format("[{0}({1})] {2}", name, tempList.Count.ToString(), item.Title.StripHtml()), IrcTextFormat.Split);
+							foreach (var s in output.WordBreak(LineLength))
+							{
+								Irc.PrivateMessage(new IrcTarget(chan), s);
+							}
 						}
 						tempList.Add(item);
 					}

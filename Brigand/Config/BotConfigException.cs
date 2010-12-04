@@ -1,26 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Brigand
 {
 	public class BotConfigException : Exception
 	{
-		private const string BASE_MESSAGE = "A configuration error occurred: {0}";
+		private const string BaseMessage = "A configuration error occurred: {0}";
 
 		public BotConfigException(string message) :
-			base(string.Format(BASE_MESSAGE,message))
+			base(string.Format(BaseMessage,message))
 		{
 		}
 
 		public BotConfigException(Exception innerException) :
-			base(string.Format(BASE_MESSAGE,innerException.Message), innerException)
+			base(string.Format(BaseMessage,innerException.Message), innerException)
 		{
 		}
 
 		public BotConfigException(string message, Exception innerException) :
-			base(string.Format(BASE_MESSAGE, message), innerException)
+			base(string.Format(BaseMessage, message), innerException)
 		{
 		}
 	}

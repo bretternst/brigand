@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.ComponentModel;
-using System.Security;
-using System.Globalization;
-using System.Threading;
+using Floe.Net;
 
 namespace Brigand
 {
@@ -29,25 +24,25 @@ namespace Brigand
 			public ITriviaProvider Provider;
 		}
 
-		private const string TRIVIA_NAME = "trivia";
-		private const string SKIP_NAME = "skip";
-		private const string ABORT_NAME = "abort";
-		private const string TRIVIA_START_STR = "You've been served, and now it's on. Let's have some trivia!";
-		private const string TRIVIA_REQ_STR = "{0} wants to start a game of trivia in {1}.";
-		private const string TRIVIA_ONE_MORE_STR = "We only need one more! Uno mas!";
-		private const string TRIVIA_REQ_EXPIRE = "Time's up, I guess nobody else is man enough to play trivia.";
-		private const string TRIVIA_START = "-----[ A trivia game is starting! The first question will be asked in {0} seconds... ]-----";
-		private const string QUESTION_ASK = "-----[ Question # {0} ]-----";
-		private const string QUESTION_NEXT = "The next question will be asked in {0} seconds...";
-		private const string QUESTION_HINT = "Here's a hint: {0}";
-		private const string QUESTION_EXPIRE = "Time's up! Nobody got the right answer: {0}";
-		private const string QUESTION_CORRECT = "Ding! Ding! Ding! {0} got the correct answer: {1}";
-		private const string NO_WINNER = "There were no winners. Only losers. Namely, all of you.";
-		private const string GAME_OVER = "-----[ The trivia game is over. Get lost. ]-----";
-		private const string GAME_WINNER = "Way to go genius, we're SO impressed with your knowledge.";
-		private const string GAME_TIE = "Winners don't tie. Try harder next time.";
-		private const string ANSWER_REVEAL = "The answer is {0}";
-		private const string QUESTION_SKIPPED = "{0} out of {0} people agree: the question sucks. Skipping...";
+		private const string TriviaName = "trivia";
+		private const string SkipName = "skip";
+		private const string AbortName = "abort";
+		private const string TriviaServedMessage = "You've been served, and now it's on. Let's have some trivia!";
+		private const string TriviaRequestMessage = "{0} wants to start a game of trivia in {1}.";
+		private const string TriviaOneMore = "We only need one more! Uno mas!";
+		private const string TriviaReqExpire = "Time's up, I guess nobody else is man enough to play trivia.";
+		private const string TriviaStartMessage = "-----[ A trivia game is starting! The first question will be asked in {0} seconds... ]-----";
+		private const string QuestionAsk = "-----[ Question # {0} ]-----";
+		private const string QuestionNext = "The next question will be asked in {0} seconds...";
+		private const string QuestionHint = "Here's a hint: {0}";
+		private const string QuestionExpire = "Time's up! Nobody got the right answer: {0}";
+		private const string QuestionCorrect = "Ding! Ding! Ding! {0} got the correct answer: {1}";
+		private const string NoWinner = "There were no winners. Only losers. Namely, all of you.";
+		private const string GameOver = "-----[ The trivia game is over. Get lost. ]-----";
+		private const string GameWinner = "Way to go genius, we're SO impressed with your knowledge.";
+		private const string GameTie = "Winners don't tie. Try harder next time.";
+		private const string AnswerReveal = "The answer is {0}";
+		private const string QuestionSkipped = "{0} out of {0} people agree: the question sucks. Skipping...";
 
 		private Dictionary<string, HashSet<string>> _requests = new Dictionary<string, HashSet<string>>();
 		private Dictionary<string, Timer> _reqTimers = new Dictionary<string, Timer>();
@@ -88,80 +83,109 @@ namespace Brigand
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(TriviaRequest);
 
 			if (this.ProviderType == null)
+			{
 				throw new InvalidOperationException("The ProviderType property is required.");
+			}
 			if (this.RequestThreshold < 1)
+			{
 				throw new InvalidOperationException("The RequestThreshold property is required.");
+			}
 			if (this.RequestExpire < 1)
+			{
 				throw new InvalidOperationException("The RequestExpire property is required.");
+			}
 			if (this.QuestionsPerGame < 1)
+			{
 				throw new InvalidOperationException("The QuestionsPerGame property is reqiured.");
+			}
 		}
 
 		private void TriviaRequest(object sender, AliasEventArgs e)
 		{
-			if (!e.Target.IsChannel)
+			if (e.To.Type != IrcTargetType.Channel)
 			{
 				return;
 			}
 
-			string chan = e.Target.Channel;
-			string user = e.From.NickUserHost;
+			var chan = e.To.Name;
+			string user = e.From.Prefix;
 
 			switch (e.Name)
 			{
-				case ABORT_NAME:
+				case AbortName:
 					{
-						if (!_games.ContainsKey(chan)) return;
-						if (_games[chan].Aborts.Contains(user)) return;
+						if (!_games.ContainsKey(chan) || _games[chan].Aborts.Contains(user))
+						{
+							return;
+						}
 						_games[chan].Aborts.Add(user);
 						if (_games[chan].Aborts.Count >= this.RequestThreshold)
 						{
-							this.TriviaGameOver(chan);
+							this.TriviaGameOver(e.To);
 						}
 					}
 					break;
-				case SKIP_NAME:
+				case SkipName:
 					{
-						if (!_games.ContainsKey(chan)) return;
-						if (_games[chan].Skips.Contains(user)) return;
+						if (!_games.ContainsKey(chan) || _games[chan].Skips.Contains(user))
+						{
+							return;
+						}
 						_games[chan].Skips.Add(user);
 						if (_games[chan].Skips.Count >= this.SkipThreshold)
 						{
-							this.TriviaNextQuestion(chan, false);
+							this.TriviaNextQuestion(e.To, false);
 						}
 					}
 					break;
-				case TRIVIA_NAME:
+				case TriviaName:
 					{
-						if (_games.ContainsKey(chan)) return;
+						if (_games.ContainsKey(chan))
+						{
+							return;
+						}
 
 						if (!_requests.ContainsKey(chan))
-							_requests.Add(chan, new HashSet<string>());
-						if (!_requests[chan].Contains(user))
-							_requests[chan].Add(user);
-						else
-							return;
-
-						if (_requests[chan].Count >= this.RequestThreshold)
 						{
-							this.Irc.Say(chan, TRIVIA_START_STR);
-							_requests[chan].Clear();
-							if (_reqTimers[chan] != null) _reqTimers[chan].Cancel();
-							_reqTimers.Remove(chan);
-							TriviaStart(chan);
+							_requests.Add(chan, new HashSet<string>());
+						}
+						if (!_requests[chan].Contains(user))
+						{
+							_requests[chan].Add(user);
 						}
 						else
 						{
-							string s = string.Format(TRIVIA_REQ_STR, e.From.Nickname, chan);
+							return;
+						}
+
+						if (_requests[chan].Count >= this.RequestThreshold)
+						{
+							this.Irc.PrivateMessage(e.To, TriviaServedMessage);
+							_requests[chan].Clear();
+							if (_reqTimers.ContainsKey(chan))
+							{
+								if (_reqTimers[chan] != null)
+								{
+									_reqTimers[chan].Cancel();
+								}
+								_reqTimers.Remove(chan);
+							}
+							TriviaStart(e.To);
+						}
+						else
+						{
+							string s = string.Format(TriviaRequestMessage, e.From.Nickname, chan);
 							if (this.RequestThreshold - _requests[chan].Count == 1)
-								s += " " + TRIVIA_ONE_MORE_STR;
-							this.Irc.Say(chan, s);
+							{
+								s += " " + TriviaOneMore;
+							}
+							this.Irc.PrivateMessage(e.To, s);
 							if (!_reqTimers.ContainsKey(chan))
 							{
 								_reqTimers.Add(chan,
 									new Timer(this.Dispatcher, (EventHandler)((s2, o) =>
 									{
-										this.Irc.Say(chan, TRIVIA_REQ_EXPIRE);
+										this.Irc.PrivateMessage(e.To, TriviaReqExpire);
 										_requests[chan].Clear();
 										_reqTimers.Remove(chan);
 									}
@@ -173,45 +197,51 @@ namespace Brigand
 			}
 		}
 
-		private void TriviaStart(string chan)
+		private void TriviaStart(IrcTarget to)
 		{
+			var chan = to.Name;
 			_requests[chan].Clear();
 			_games.Add(chan, new Game());
 			_games[chan].Provider = CreateProvider();
-			this.Irc.Say(chan, string.Format(TRIVIA_START, this.BeforeQuestionDelay));
-			this.Irc.PrivateMessage += new EventHandler<IrcChatEventArgs>(TriviaGuess);
-			_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.BeforeQuestionDelay*1000, chan);
+			this.Irc.PrivateMessage(to, string.Format(TriviaStartMessage, this.BeforeQuestionDelay));
+			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(TriviaGuess);
+			_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.BeforeQuestionDelay*1000, to);
 		}
 
 		private void TriviaLoop(object sender, EventArgs e)
 		{
-			string chan = (string)((CallbackEventArgs)e).State;
+			var to = (IrcTarget)((CallbackEventArgs)e).State;
+			var chan = to.Name;
 
 			switch (_games[chan].State)
 			{
 				case GameState.Asking:
 					_games[chan].Provider.NextQuestion();
-					this.Irc.Say(chan, string.Format(QUESTION_ASK, _games[chan].QuestionNum+1));
-					this.Irc.Say(chan, _games[chan].Provider.QuestionText);
+					this.Irc.PrivateMessage(to, string.Format(QuestionAsk, _games[chan].QuestionNum+1));
+					this.Irc.PrivateMessage(to, _games[chan].Provider.QuestionText);
 					_games[chan].State = GameState.Asked;
-					_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.AfterQuestionDelay*1000, chan);
+					_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.AfterQuestionDelay*1000, to);
 					break;
 				case GameState.Asked:
 					bool hasHints = _games[chan].Provider.HasHints;
 					bool canReveal = this.CanReveal(_games[chan].Provider.PrimaryAnswer, _games[chan].CurrentHint);
 					if (++_games[chan].CurrentHint <= this.MaxNumberOfHints && (hasHints || canReveal))
 					{
-						if(hasHints)
-							this.Irc.Say(chan, string.Format(QUESTION_HINT, _games[chan].Provider.NextHint()));
+						if (hasHints)
+						{
+							this.Irc.PrivateMessage(to, string.Format(QuestionHint, _games[chan].Provider.NextHint()));
+						}
 						if (canReveal)
-							this.Irc.Say(chan, string.Format(ANSWER_REVEAL,
+						{
+							this.Irc.PrivateMessage(to, string.Format(AnswerReveal,
 								this.GetAnswerReveal(_games[chan].Provider.PrimaryAnswer, _games[chan].CurrentHint)));
-						_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.AfterHintDelay * 1000, chan);
+						}
+						_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.AfterHintDelay * 1000, to);
 					}
 					else
 					{
-						this.Irc.Say(chan, string.Format(QUESTION_EXPIRE, _games[chan].Provider.PrimaryAnswer));
-						TriviaNextQuestion(chan, true);
+						this.Irc.PrivateMessage(to, string.Format(QuestionExpire, _games[chan].Provider.PrimaryAnswer));
+						TriviaNextQuestion(to, true);
 					}
 					break;
 				default:
@@ -219,15 +249,17 @@ namespace Brigand
 			}
 		}
 
-		private void TriviaNextQuestion(string chan, bool increment)
+		private void TriviaNextQuestion(IrcTarget to, bool increment)
 		{
+			var chan = to.Name;
+
 			if (increment)
 			{
 				_games[chan].QuestionNum++;
 			}
 			else
 			{
-				this.Irc.Say(chan, string.Format(QUESTION_SKIPPED, this.SkipThreshold));
+				this.Irc.PrivateMessage(to, string.Format(QuestionSkipped, this.SkipThreshold));
 			}
 			if (_games[chan].Timer != null)
 			{
@@ -239,34 +271,43 @@ namespace Brigand
 			_games[chan].Skips.Clear();
 			if (_games[chan].QuestionNum < this.QuestionsPerGame)
 			{
-				this.Irc.Say(chan, string.Format(QUESTION_NEXT, this.BeforeQuestionDelay));
-				_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.BeforeQuestionDelay*1000, chan);
+				this.Irc.PrivateMessage(to, string.Format(QuestionNext, this.BeforeQuestionDelay));
+				_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.BeforeQuestionDelay*1000, to);
 			}
 			else
 			{
-				TriviaGameOver(chan);
+				TriviaGameOver(to);
 			}
 		}
 
-		private void TriviaGuess(object sender, IrcChatEventArgs e)
+		private void TriviaGuess(object sender, IrcDialogEventArgs e)
 		{
-			if (e.IsSelf || e.From.IsServer || !e.Target.IsChannel || !_games.ContainsKey(e.Target.Channel))
+			if (e.To.Type != IrcTargetType.Channel || !_games.ContainsKey(e.To.Name))
+			{
 				return;
+			}
 
-			string chan = e.Target.Channel;
-			if (_games[chan].State != GameState.Asked) return;
+			string chan = e.To.Name;
+			if (_games[chan].State != GameState.Asked)
+			{
+				return;
+			}
 			if (_games[chan].Provider.CheckAnswer(e.Text.Trim().ToLower()))
 			{
-				this.Irc.Say(chan, string.Format(QUESTION_CORRECT, e.From.Nickname, _games[chan].Provider.PrimaryAnswer));
+				this.Irc.PrivateMessage(e.To, string.Format(QuestionCorrect, e.From.Nickname, _games[chan].Provider.PrimaryAnswer));
 				if (!_games[chan].Scores.ContainsKey(e.From.Nickname))
+				{
 					_games[chan].Scores.Add(e.From.Nickname, 0);
+				}
 				_games[chan].Scores[e.From.Nickname]++;
-				TriviaNextQuestion(chan, true);
+				TriviaNextQuestion(e.To, true);
 			}
 		}
 
-		private void TriviaGameOver(string chan)
+		private void TriviaGameOver(IrcTarget to)
 		{
+			var chan = to.Name;
+
 			if (_games[chan].Timer != null)
 			{
 				_games[chan].Timer.Cancel();
@@ -279,7 +320,7 @@ namespace Brigand
 
 			if (scores.Count < 1)
 			{
-				this.Irc.Say(chan, NO_WINNER);
+				this.Irc.PrivateMessage(to, NoWinner);
 			}
 			else
 			{
@@ -306,23 +347,33 @@ namespace Brigand
 				{
 					sb.Append(winners[i]);
 					if (i < winners.Count - 2)
+					{
 						sb.Append(", ");
+					}
 					else if (i < winners.Count - 1)
+					{
 						sb.Append(" and ");
+					}
 				}
 				sb.Append(" with ").Append(topScore).Append(" point");
-				if (topScore > 1) sb.Append("s");
+				if (topScore > 1)
+				{
+					sb.Append("s");
+				}
 				sb.Append(" each.");
-				this.Irc.Say(chan, sb.ToString());
-				this.Irc.Say(chan, GAME_TIE);
+				this.Irc.PrivateMessage(to, sb.ToString());
+				this.Irc.PrivateMessage(to, GameTie);
 			}
 			else if (winners.Count == 1)
 			{
 				sb.Append("Game over. The game's winner is ").Append(winners[0]).Append(" with ").Append(topScore).Append(" point");
-				if (topScore > 1) sb.Append("s");
+				if (topScore > 1)
+				{
+					sb.Append("s");
+				}
 				sb.Append(". ");
-				sb.Append(GAME_WINNER);
-				this.Irc.Say(chan, sb.ToString());
+				sb.Append(GameWinner);
+				this.Irc.PrivateMessage(to, sb.ToString());
 			}
 
 			var runnersUp = new Dictionary<int, List<string>>();
@@ -333,7 +384,9 @@ namespace Brigand
 					if (scores[k] < topScore)
 					{
 						if (runnersUp.ContainsKey(scores[k]))
+						{
 							runnersUp[scores[k]].Add(k);
+						}
 						else
 						{
 							runnersUp.Add(scores[k], new List<string>());
@@ -345,7 +398,7 @@ namespace Brigand
 
 			sb.Length = 0;
 			int place = 0;
-			for (int i = topScore - 1; i >= 1; i--)
+			for (int i = topScore - 1; i >= 1 && place <= 2; i--)
 			{
 				if (!runnersUp.ContainsKey(i)) continue;
 				switch (place)
@@ -367,17 +420,20 @@ namespace Brigand
 				if (i > 1) sb.Append("s");
 				sb.Append(": ");
 				foreach (var s in runnersUp[i])
+				{
 					sb.Append(s).Append(", ");
+				}
 				sb.Length = sb.Length - 2;
-				this.Irc.Say(chan, sb.ToString());
+				this.Irc.PrivateMessage(to, sb.ToString());
 				sb.Length = 0;
 				place++;
-				if (place > 2) break;
 			}
 
-			this.Irc.Say(chan, GAME_OVER);
+			this.Irc.PrivateMessage(to, GameOver);
 			if (_games[chan].Provider is IDisposable)
+			{
 				((IDisposable)_games[chan].Provider).Dispose();
+			}
 			_games.Remove(chan);
 		}
 
@@ -385,17 +441,23 @@ namespace Brigand
 		{
 			Type t = Type.GetType(this.ProviderType, false);
 			if (t == null)
+			{
 				throw new InvalidOperationException("The type " + this.ProviderType + " was not found.");
+			}
 			object o = Activator.CreateInstance(t);
 			if (!(o is ITriviaProvider))
+			{
 				throw new InvalidOperationException("The type " + this.ProviderType + " does not implement ITriviaProvider.");
+			}
 			return o as ITriviaProvider;
 		}
 
 		private bool CanReveal(string answer, int hint)
 		{
 			if (!this.ShowAnswerReveal)
+			{
 				return false;
+			}
 
 			int numAlpha = 0;
 			for (int i = 0; i < answer.Length; i++)

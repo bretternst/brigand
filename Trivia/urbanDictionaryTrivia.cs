@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Brigand
@@ -11,7 +10,7 @@ namespace Brigand
 		// the HTML fragments to look for
 		private const string PHRASE_TAG_START = "<td class='word'>";
 		private const string PHRASE_TAG_END = "</td>";
-		private const string DEF_TAG_START = "<div class='definition'>";
+		private const string DEF_TAG_START = "<div class=\"definition\">";
 		private const string DEF_TAG_END = "</div>";
 
 		// the URL of the page to get
@@ -65,11 +64,11 @@ namespace Brigand
 			PrimaryAnswer = "";
 			currentHint = 0;
 
+
 			tagIndex = 0;
 			// loop until we don't find any more phrase tags
 			while (true)
 			{
-
 				// find the next phrase tag
 				tagIndex = response.IndexOf(PHRASE_TAG_START, tagIndex) + PHRASE_TAG_START.Length;
 				if (tagIndex - PHRASE_TAG_START.Length == -1) break;

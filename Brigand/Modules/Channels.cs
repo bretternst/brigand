@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections;
-using System.Collections.ObjectModel;
-using System.Text;
 using System.Linq;
 using System.Xml.Linq;
-using System.ComponentModel;
+
+using Floe.Net;
 
 namespace Brigand
 {
@@ -18,7 +16,7 @@ namespace Brigand
 		protected override void OnInit()
 		{
 			base.OnInit();
-			this.Irc.Connected += new EventHandler<IrcEventArgs>(Irc_Connected);
+			this.Irc.StateChanged += new EventHandler<EventArgs>(Irc_StateChanged);
 		}
 
 		protected override void LoadConfig(XElement moduleEl)
@@ -39,9 +37,12 @@ namespace Brigand
 				select new XElement("channel", chan));
 		}
 
-		private void Irc_Connected(object sender, IrcEventArgs e)
+		private void Irc_StateChanged(object sender, EventArgs e)
 		{
-			_channelsToJoin.ForEach((chan) => this.Irc.Join(chan));
+			if (this.Irc.State == IrcSessionState.Connected)
+			{
+				_channelsToJoin.ForEach((chan) => this.Irc.Join(chan));
+			}
 		}
 	}
 }

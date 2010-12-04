@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Xml.Linq;
 using System.Reflection;
-using System.ComponentModel;
+using System.Xml.Linq;
+using Floe.Net;
 
 namespace Brigand
 {
@@ -18,10 +17,64 @@ namespace Brigand
 
 		public Bot Bot { get { return _bot; } internal set { _bot = value; } }
 		public Dispatcher Dispatcher { get { return _bot.Dispatcher; } }
-		public Irc Irc { get { return this.Bot.Irc; } }
+		public IrcSession Irc { get { return this.Bot.Irc; } }
 		public Security Security { get { return this.Bot.Security; } }
 		public Channels Channels { get { return this.Bot.Channels; } }
 		public Aliases Aliases { get { return this.Bot.Aliases; } }
+
+		public static void LoadProperties(object obj, XElement configEl)
+		{
+			foreach (var property in obj.GetType().GetProperties(
+				BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+			{
+				var attr = property.GetCustomAttributes(
+					typeof(ModulePropertyAttribute), true).OfType<ModulePropertyAttribute>().FirstOrDefault();
+				if (attr != null)
+				{
+					var configAt = configEl.Attribute(attr.ConfigName);
+					if (configAt != null)
+					{
+						try
+						{
+							var converter = BotModule.GetTypeConverter(property);
+							property.SetValue(obj, converter.ConvertFromString(configAt.Value), null);
+						}
+						catch (Exception ex)
+						{
+							throw new BotConfigException(string.Format(
+								"Could not load configuration property {0}", attr.ConfigName), ex);
+						}
+					}
+				}
+			}
+		}
+
+		public static void SaveProperties(object obj, XElement configEl)
+		{
+			foreach (var property in obj.GetType().GetProperties(
+				BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+			{
+				var attr = property.GetCustomAttributes(
+					typeof(ModulePropertyAttribute), true).OfType<ModulePropertyAttribute>().FirstOrDefault();
+				if (attr != null)
+				{
+					try
+					{
+						object val = property.GetValue(obj, null);
+						if (val != null)
+						{
+							var converter = BotModule.GetTypeConverter(property);
+							configEl.Add(new XAttribute(attr.ConfigName, converter.ConvertToString(val)));
+						}
+					}
+					catch (Exception ex)
+					{
+						throw new BotConfigException(string.Format(
+							"Could not save configuration property {0}", attr.ConfigName), ex);
+					}
+				}
+			}
+		}
 
 		protected void WriteTraceMessage(string message)
 		{
@@ -59,60 +112,6 @@ namespace Brigand
 		protected virtual void OnStop()
 		{
 			this.WriteTraceMessage("Stop");
-		}
-
-		protected static void LoadProperties(object obj, XElement configEl)
-		{
-			foreach (var property in obj.GetType().GetProperties(
-				BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-			{
-				var attr = property.GetCustomAttributes(
-					typeof(ModulePropertyAttribute), true).OfType<ModulePropertyAttribute>().FirstOrDefault();
-				if (attr != null)
-				{
-					var configAt = configEl.Attribute(attr.ConfigName);
-					if (configAt != null)
-					{
-						try
-						{
-							var converter = BotModule.GetTypeConverter(property);
-							property.SetValue(obj, converter.ConvertFromString(configAt.Value), null);
-						}
-						catch (Exception ex)
-						{
-							throw new BotConfigException(string.Format(
-								"Could not load configuration property {0}", attr.ConfigName), ex);
-						}
-					}
-				}
-			}
-		}
-
-		protected static void SaveProperties(object obj, XElement configEl)
-		{
-			foreach (var property in obj.GetType().GetProperties(
-				BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-			{
-				var attr = property.GetCustomAttributes(
-					typeof(ModulePropertyAttribute), true).OfType<ModulePropertyAttribute>().FirstOrDefault();
-				if (attr != null)
-				{
-					try
-					{
-						object val = property.GetValue(obj, null);
-						if (val != null)
-						{
-							var converter = BotModule.GetTypeConverter(property);
-							configEl.Add(new XAttribute(attr.ConfigName, converter.ConvertToString(val)));
-						}
-					}
-					catch (Exception ex)
-					{
-						throw new BotConfigException(string.Format(
-							"Could not save configuration property {0}", attr.ConfigName), ex);
-					}
-				}
-			}
 		}
 
 		private static TypeConverter GetTypeConverter(PropertyInfo property)

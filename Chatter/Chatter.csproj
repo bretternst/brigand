@@ -37,6 +37,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Floe.Net">
+      <HintPath>..\External\Floe.Net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -49,6 +52,7 @@
   <ItemGroup>
     <Compile Include="Chatter.cs" />
     <Compile Include="Memory.cs" />
+    <Compile Include="Node.cs" />
     <Compile Include="Symbols.cs" />
     <Compile Include="StringParser.cs" />
     <Compile Include="Model.cs" />

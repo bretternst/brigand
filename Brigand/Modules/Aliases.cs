@@ -1,10 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
+using Floe.Net;
 
 namespace Brigand
 {
+	#region AliasEventArgs class
+
+	public class AliasEventArgs : IrcDialogEventArgs
+	{
+		private string _name;
+		private string[] _arguments;
+		private IrcTarget _replyTo;
+
+		public string Name { get { return _name; } }
+
+		public IrcTarget ReplyTo { get { return _replyTo; } }
+
+		public IList<string> Arguments { get { return _arguments; } }
+
+		internal AliasEventArgs(IrcDialogEventArgs e, string name, string[] arguments)
+			: base(e.Message)
+		{
+			_name = name;
+			_arguments = arguments;
+			_replyTo = e.To.Type == IrcTargetType.Channel ? e.To : new IrcTarget(e.From);
+		}
+	}
+
+	#endregion
+
 	public sealed class Aliases : BotModule
 	{
 		[ModuleProperty("prefix")]
@@ -15,7 +41,9 @@ namespace Brigand
 		protected override void OnInit()
 		{
 			if (string.IsNullOrEmpty(this.Prefix))
+			{
 				throw new InvalidOperationException("The AliasPrefix property is required.");
+			}
 
 			base.OnInit();
 		}
@@ -24,19 +52,12 @@ namespace Brigand
 		{
 			base.OnStart();
 
-			this.Irc.PrivateMessage += new EventHandler<IrcChatEventArgs>(Irc_PrivateMessage);
+			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(Irc_PrivateMessaged);
 		}
 
-		private void OnCallAlias(IrcChatEventArgs e, string name, string[] arguments)
+		private void Irc_PrivateMessaged(object sender, IrcDialogEventArgs e)
 		{
-			var evt = this.CallAlias;
-			if (evt != null)
-				evt(this, new AliasEventArgs(e, name, arguments));
-		}
-
-		private void Irc_PrivateMessage(object sender, IrcChatEventArgs e)
-		{
-			if (e.IsSelf)
+			if (string.Compare(e.From.Nickname, this.Irc.Nickname, true) == 0)
 			{
 				return;
 			}
@@ -55,24 +76,14 @@ namespace Brigand
 				this.OnCallAlias(e, aliasName, StringTokenizer.Tokenize(paramString).ToArray());
 			}
 		}
-	}
 
-	public class AliasEventArgs : IrcChatEventArgs
-	{
-		private string _name;
-		private string[] _arguments;
-
-		public string Name { get { return _name; } }
-
-		public IList<string> Arguments { get { return _arguments; } }
-
-		public bool Handled { get; set; }
-
-		internal AliasEventArgs(IrcChatEventArgs e, string name, string[] arguments) :
-			base(e)
+		private void OnCallAlias(IrcDialogEventArgs e, string name, string[] arguments)
 		{
-			_name = name;
-			_arguments = arguments;
+			var evt = this.CallAlias;
+			if (evt != null)
+			{
+				evt(this, new AliasEventArgs(e, name, arguments));
+			}
 		}
 	}
 }

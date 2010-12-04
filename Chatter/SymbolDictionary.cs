@@ -1,26 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace Brigand.MarkovModel
 {
 	class SymbolDictionary
 	{
-		private List<Symbol> store = new List<Symbol>();
-		private Dictionary<Symbol, ushort> lookup = new Dictionary<Symbol,ushort>();
+		private List<Symbol> _store = new List<Symbol>();
+		private Dictionary<Symbol, ushort> _lookup = new Dictionary<Symbol,ushort>();
 
 		public ushort AddSymbol(Symbol s)
 		{
-			if (lookup.ContainsKey(s))
+			if (_lookup.ContainsKey(s))
 			{
-				return lookup[s];
+				return _lookup[s];
 			}
 
-			store.Add(s);
-			ushort idx = (ushort)(store.Count - 1);
-			lookup.Add(s, idx);
+			_store.Add(s);
+			ushort idx = (ushort)(_store.Count - 1);
+			_lookup.Add(s, idx);
 			return idx;
 		}
 
@@ -28,7 +25,7 @@ namespace Brigand.MarkovModel
 		{
 			get
 			{
-				return store[token];
+				return _store[token];
 			}
 		}
 
@@ -36,7 +33,7 @@ namespace Brigand.MarkovModel
 		{
 			get
 			{
-				return lookup[sym];
+				return _lookup[sym];
 			}
 		}
 
@@ -44,16 +41,16 @@ namespace Brigand.MarkovModel
 		{
 			get
 			{
-				return store.Count;
+				return _store.Count;
 			}
 		}
 
 		public void Save(BinaryWriter bw)
 		{
-			bw.Write((ushort)store.Count);
-			for (int i = 0; i < store.Count; i++)
+			bw.Write((ushort)_store.Count);
+			for (int i = 0; i < _store.Count; i++)
 			{
-				store[i].Save(bw);
+				_store[i].Save(bw);
 			}
 		}
 
@@ -62,9 +59,11 @@ namespace Brigand.MarkovModel
 			int count = (int)br.ReadUInt16();
 			for (ushort i = 0; i < count; i++)
 			{
-				store.Add(Symbol.Load(br));
-				if(!lookup.ContainsKey(store[i]))
-					lookup.Add(store[i], i);
+				_store.Add(Symbol.Load(br));
+				if (!_lookup.ContainsKey(_store[i]))
+				{
+					_lookup.Add(_store[i], i);
+				}
 			}
 		}
 	}

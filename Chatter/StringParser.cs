@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace Brigand.MarkovModel
@@ -60,8 +58,14 @@ namespace Brigand.MarkovModel
 			bool beginSentence = true;
 			foreach (Symbol sym in symbols)
 			{
-				if (sym is TerminateSymbol) break;
-				if (sb.Length > 0 && !(sym is PunctuationSymbol)) sb.Append(' ');
+				if (sym is TerminateSymbol)
+				{
+					break;
+				}
+				if (sb.Length > 0 && !(sym is PunctuationSymbol))
+				{
+					sb.Append(' ');
+				}
 				if (sym is UrlSymbol)
 				{
 					sb.Append(sym.ToString());
@@ -75,9 +79,13 @@ namespace Brigand.MarkovModel
 					beginSentence = false;
 				}
 				else
+				{
 					sb.Append(sym.ToString().ToLower());
+				}
 				if (sym is PunctuationSymbol && ((PunctuationSymbol)sym).IsTerminating)
+				{
 					beginSentence = true;
+				}
 			}
 			return sb.ToString();
 		}

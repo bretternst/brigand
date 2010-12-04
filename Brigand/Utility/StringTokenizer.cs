@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -8,16 +7,16 @@ namespace Brigand
 {
 	internal class StringTokenizer
 	{
-		static Regex _tokenizer = new Regex(@"(""([^""\\]|\\.)*""|[^\s]+)", RegexOptions.Compiled);
+		private static Regex _tokenizer = new Regex(@"(""([^""\\]|\\.)*""|[^\s]+)", RegexOptions.Compiled);
 
-		static public IEnumerable<string> Tokenize(string s)
+		public static IEnumerable<string> Tokenize(string s)
 		{
 			foreach (Match m in _tokenizer.Matches(s))
 				yield return m.Value.StartsWith("\"") && m.Value.EndsWith("\"") ?
 					MakeStringRaw(m.Value) : m.Value;
 		}
 
-		static public string MakeStringRaw(string s)
+		public static string MakeStringRaw(string s)
 		{
 			int length = s.Length;
 			StringBuilder raw = new StringBuilder(length);
