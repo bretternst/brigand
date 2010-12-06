@@ -129,6 +129,12 @@ namespace Brigand
 			var rootEl = new XElement("bot");
 			BotModule.SaveProperties(this, rootEl);
 
+			_startup.ForEach((startup) =>
+				{
+					var startupEl = new XElement("startup", startup);
+					rootEl.Add(startupEl);
+				});
+
 			_modules.ForEach((module) =>
 				{
 					var moduleEl = new XElement("module",
