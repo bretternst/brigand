@@ -44,7 +44,7 @@ namespace Brigand
 
 		protected override void OnInit()
 		{
-			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(PrivateMessage);
+			this.Irc.PrivateMessaged += new EventHandler<IrcMessageEventArgs>(PrivateMessage);
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(AliasModule_CallAlias);
 
 			if (this.BrainFile == null)
@@ -94,7 +94,7 @@ namespace Brigand
 			}
 		}
 
-		private void PrivateMessage(object sender, IrcDialogEventArgs e)
+		private void PrivateMessage(object sender, IrcMessageEventArgs e)
 		{
 			if (e.To.Type == IrcTargetType.Channel)
 			{

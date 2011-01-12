@@ -72,7 +72,7 @@ namespace Brigand
 				}
 			}
 
-			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(Irc_PrivateMessage);
+			this.Irc.PrivateMessaged += new EventHandler<IrcMessageEventArgs>(Irc_PrivateMessage);
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
 		}
 
@@ -156,7 +156,7 @@ namespace Brigand
 			_engine.Execute(scriptCode);
 		}
 
-		private void Irc_PrivateMessage(object sender, IrcDialogEventArgs e)
+		private void Irc_PrivateMessage(object sender, IrcMessageEventArgs e)
 		{
 			if (string.Compare(e.From.Nickname, this.Irc.Nickname, true) == 0)
 			{

@@ -204,7 +204,7 @@ namespace Brigand
 			_games.Add(chan, new Game());
 			_games[chan].Provider = CreateProvider();
 			this.Irc.PrivateMessage(to, string.Format(TriviaStartMessage, this.BeforeQuestionDelay));
-			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(TriviaGuess);
+			this.Irc.PrivateMessaged += new EventHandler<IrcMessageEventArgs>(TriviaGuess);
 			_games[chan].Timer = new Timer(this.Dispatcher, TriviaLoop, this.BeforeQuestionDelay*1000, to);
 		}
 
@@ -280,7 +280,7 @@ namespace Brigand
 			}
 		}
 
-		private void TriviaGuess(object sender, IrcDialogEventArgs e)
+		private void TriviaGuess(object sender, IrcMessageEventArgs e)
 		{
 			if (e.To.Type != IrcTargetType.Channel || !_games.ContainsKey(e.To.Name))
 			{

@@ -8,7 +8,7 @@ namespace Brigand
 {
 	#region AliasEventArgs class
 
-	public class AliasEventArgs : IrcDialogEventArgs
+	public class AliasEventArgs : IrcMessageEventArgs
 	{
 		private string _name;
 		private string[] _arguments;
@@ -20,7 +20,7 @@ namespace Brigand
 
 		public IList<string> Arguments { get { return _arguments; } }
 
-		internal AliasEventArgs(IrcDialogEventArgs e, string name, string[] arguments)
+		internal AliasEventArgs(IrcMessageEventArgs e, string name, string[] arguments)
 			: base(e.Message)
 		{
 			_name = name;
@@ -52,10 +52,10 @@ namespace Brigand
 		{
 			base.OnStart();
 
-			this.Irc.PrivateMessaged += new EventHandler<IrcDialogEventArgs>(Irc_PrivateMessaged);
+			this.Irc.PrivateMessaged += new EventHandler<IrcMessageEventArgs>(Irc_PrivateMessaged);
 		}
 
-		private void Irc_PrivateMessaged(object sender, IrcDialogEventArgs e)
+		private void Irc_PrivateMessaged(object sender, IrcMessageEventArgs e)
 		{
 			if (string.Compare(e.From.Nickname, this.Irc.Nickname, true) == 0)
 			{
@@ -77,7 +77,7 @@ namespace Brigand
 			}
 		}
 
-		private void OnCallAlias(IrcDialogEventArgs e, string name, string[] arguments)
+		private void OnCallAlias(IrcMessageEventArgs e, string name, string[] arguments)
 		{
 			var evt = this.CallAlias;
 			if (evt != null)

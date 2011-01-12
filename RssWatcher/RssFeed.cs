@@ -29,8 +29,7 @@ namespace Brigand
 
 	public sealed class RssFeed
 	{
-		private List<FeedItem> items;
-		private DateTime updated;
+		private List<FeedItem> _items;
 
 		[ModuleProperty("name")]
 		public string Name { get; private set; }
@@ -38,18 +37,19 @@ namespace Brigand
 		[ModuleProperty("url")]
 		public string Url { get; set; }
 
-		public DateTime UpdatedDate { get { return updated; } }
+		public DateTime UpdatedDate { get; private set; }
 
-		public ICollection<FeedItem> Items { get { return items; } }
+		public ICollection<FeedItem> Items { get { return _items; } }
 
 		public RssFeed()
 		{
-			items = new List<FeedItem>();
+			_items = new List<FeedItem>();
+			this.UpdatedDate = DateTime.MinValue;
 		}
 
 		public void Query()
 		{
-			items.Clear();
+			_items.Clear();
 			using (var request = new WebClient())
 			{
 				request.Encoding = System.Text.Encoding.UTF8;
@@ -71,7 +71,7 @@ namespace Brigand
 
 					foreach (var itemEl in doc.Root.Element("channel").Elements("item"))
 					{
-						items.Add(new FeedItem(itemEl));
+						_items.Add(new FeedItem(itemEl));
 					}
 				}
 				catch (NullReferenceException)
@@ -81,20 +81,15 @@ namespace Brigand
 			}
 		}
 
-		public void SetCurrentDate()
-		{
-			updated = DateTime.Now;
-		}
-
 		public IEnumerable<FeedItem> CatchUp()
 		{
 			Query();
-			var readTo = updated;
-			if (items.Count > 0)
+			var readTo = this.UpdatedDate;
+			if (_items.Count > 0)
 			{
-				updated = (from item in items select item.PublishDate).Max();
+				this.UpdatedDate = (from item in _items select item.PublishDate).Max();
 			}
-			return (from item in items where item.PublishDate > readTo select item);
+			return (from item in _items where item.PublishDate > readTo select item);
 		}
 	}
 }
