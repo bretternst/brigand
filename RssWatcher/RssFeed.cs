@@ -44,7 +44,7 @@ namespace Brigand
 		public RssFeed()
 		{
 			_items = new List<FeedItem>();
-			this.UpdatedDate = DateTime.MinValue;
+			this.UpdatedDate = DateTime.UtcNow;
 		}
 
 		public void Query()
