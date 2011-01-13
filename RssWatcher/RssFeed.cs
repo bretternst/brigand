@@ -46,7 +46,22 @@ namespace Brigand
 			_items = new List<FeedItem>();
 		}
 
-		public void Query()
+		public IEnumerable<FeedItem> CatchUp()
+		{
+			this.Query();
+			var readTo = this.UpdatedDate;
+			if (_items.Count > 0)
+			{
+				this.UpdatedDate = (from item in _items select item.PublishDate).Max();
+			}
+			else
+			{
+				this.UpdatedDate = DateTime.Now;
+			}
+			return (from item in _items where item.PublishDate > readTo select item);
+		}
+
+		private void Query()
 		{
 			_items.Clear();
 			using (var request = new WebClient())
@@ -78,21 +93,6 @@ namespace Brigand
 					throw new Exception("Malformed feed XML.");
 				}
 			}
-		}
-
-		public IEnumerable<FeedItem> CatchUp()
-		{
-			this.Query();
-			var readTo = this.UpdatedDate;
-			if (_items.Count > 0)
-			{
-				this.UpdatedDate = (from item in _items select item.PublishDate).Max();
-			}
-			else
-			{
-				this.UpdatedDate = DateTime.Now;
-			}
-			return (from item in _items where item.PublishDate > readTo select item);
 		}
 	}
 }

@@ -107,7 +107,16 @@ namespace Brigand
 					throw new BotConfigException(string.Format(
 						"An RSS feed with the name {0} already exists.", feed.Name));
 				}
-				_feeds.Add(feed.Name, feed);
+				try
+				{
+					feed.CatchUp();
+					_feeds.Add(feed.Name, feed);
+				}
+				catch (Exception ex)
+				{
+					throw new BotConfigException(string.Format(
+						"An RSS feed with the name {0} could not be loaded: {1}", feed.Name, ex.Message));
+				}
 			}
 		}
 
