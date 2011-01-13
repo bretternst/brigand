@@ -44,7 +44,6 @@ namespace Brigand
 		public RssFeed()
 		{
 			_items = new List<FeedItem>();
-			this.UpdatedDate = DateTime.UtcNow;
 		}
 
 		public void Query()
@@ -83,11 +82,15 @@ namespace Brigand
 
 		public IEnumerable<FeedItem> CatchUp()
 		{
-			Query();
+			this.Query();
 			var readTo = this.UpdatedDate;
 			if (_items.Count > 0)
 			{
 				this.UpdatedDate = (from item in _items select item.PublishDate).Max();
+			}
+			else
+			{
+				this.UpdatedDate = DateTime.Now;
 			}
 			return (from item in _items where item.PublishDate > readTo select item);
 		}
