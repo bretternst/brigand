@@ -51,6 +51,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -74,6 +75,7 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -81,6 +83,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bot.cs" />
+    <Compile Include="Chatter\Chatter.cs" />
+    <Compile Include="Chatter\Memory.cs" />
+    <Compile Include="Chatter\Model.cs" />
+    <Compile Include="Chatter\Node.cs" />
+    <Compile Include="Chatter\StringParser.cs" />
+    <Compile Include="Chatter\SymbolDictionary.cs" />
+    <Compile Include="Chatter\Symbols.cs" />
     <Compile Include="Config\BotConfigException.cs" />
     <Compile Include="BotModule.cs" />
     <Compile Include="Config\HashSetConverter.cs" />
@@ -89,6 +98,9 @@
     <Compile Include="Modules\Channels.cs" />
     <Compile Include="Modules\Script.cs" />
     <Compile Include="Modules\Security.cs" />
+    <Compile Include="Rss\RssFeed.cs" />
+    <Compile Include="Rss\RssWatcher.cs" />
+    <Compile Include="Rss\StringExtensions.cs" />
     <Compile Include="Utility\Dispatcher.cs" />
     <Compile Include="Utility\Timer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

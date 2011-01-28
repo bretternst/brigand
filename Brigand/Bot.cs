@@ -170,8 +170,7 @@ namespace Brigand
 			_modules.ForEach((module) => module.DoStart());
 
 			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
-			this.Irc.Open(this.Server, this.Port, false, this.Nickname, this.Username, this.LocalHost, this.FullName, null, true);
-
+			this.Irc.Open(this.Server, this.Port, false, this.Nickname, this.Username, this.FullName, true);
 			this.Dispatcher.Run();
 		}
 

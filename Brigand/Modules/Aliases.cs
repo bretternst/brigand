@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,24 +9,21 @@ namespace Brigand
 {
 	#region AliasEventArgs class
 
-	public class AliasEventArgs : IrcMessageEventArgs
+	public class AliasEventArgs : EventArgs
 	{
-		private string _name;
-		private string[] _arguments;
-		private IrcTarget _replyTo;
+		public string Name { get; private set; }
+		public ReadOnlyCollection<string> Arguments { get; private set; }
+		public IrcPeer From { get; private set; }
+		public IrcTarget To { get; private set; }
+		public IrcTarget ReplyTo { get; private set; }
 
-		public string Name { get { return _name; } }
-
-		public IrcTarget ReplyTo { get { return _replyTo; } }
-
-		public IList<string> Arguments { get { return _arguments; } }
-
-		internal AliasEventArgs(IrcMessageEventArgs e, string name, string[] arguments)
-			: base(e.Message)
+		internal AliasEventArgs(string name, string[] arguments, IrcPeer from, IrcTarget to, IrcTarget replyTo)
 		{
-			_name = name;
-			_arguments = arguments;
-			_replyTo = e.To.Type == IrcTargetType.Channel ? e.To : new IrcTarget(e.From);
+			this.Name = name;
+			this.Arguments = new List<string>(arguments).AsReadOnly();
+			this.From = from;
+			this.To = to;
+			this.ReplyTo = replyTo;
 		}
 	}
 
@@ -82,7 +80,7 @@ namespace Brigand
 			var evt = this.CallAlias;
 			if (evt != null)
 			{
-				evt(this, new AliasEventArgs(e, name, arguments));
+				evt(this, new AliasEventArgs(name, arguments, e.From, e.To, e.To.IsChannel ? e.To : new IrcTarget(e.From)));
 			}
 		}
 	}

@@ -176,7 +176,7 @@ namespace Brigand
 					return;
 				}
 
-				this.Execute(e.To.Type == IrcTargetType.Channel ? e.To : new IrcTarget(e.From), line.Substring(this.Prefix.Length));
+				this.Execute(e.To.IsChannel ? e.To : new IrcTarget(e.From), line.Substring(this.Prefix.Length));
 			}
 		}
 

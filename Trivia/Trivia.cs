@@ -102,7 +102,7 @@ namespace Brigand
 
 		private void TriviaRequest(object sender, AliasEventArgs e)
 		{
-			if (e.To.Type != IrcTargetType.Channel)
+			if (!e.To.IsChannel)
 			{
 				return;
 			}
@@ -282,7 +282,7 @@ namespace Brigand
 
 		private void TriviaGuess(object sender, IrcMessageEventArgs e)
 		{
-			if (e.To.Type != IrcTargetType.Channel || !_games.ContainsKey(e.To.Name))
+			if (!e.To.IsChannel || !_games.ContainsKey(e.To.Name))
 			{
 				return;
 			}
