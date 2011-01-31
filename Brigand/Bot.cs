@@ -103,7 +103,7 @@ namespace Brigand
 				this.LoadModule(moduleEl);
 			}
 
-			this.Irc = new IrcSession();
+			this.Irc = new IrcSession((a) => this.Dispatcher.BeginInvoke(a));
 			BotModule.LoadProperties(this.Irc, root);
 
 			this.Security = this.GetModule(typeof(Security)) as Security;
