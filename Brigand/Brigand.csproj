@@ -103,6 +103,7 @@
     <Compile Include="Rss\RssFeed.cs" />
     <Compile Include="Rss\RssWatcher.cs" />
     <Compile Include="Rss\StringExtensions.cs" />
+    <Compile Include="Utility\DispatcherSynchronizationContext.cs" />
     <Compile Include="Utility\Dispatcher.cs" />
     <Compile Include="Utility\Timer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

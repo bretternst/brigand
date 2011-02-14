@@ -103,7 +103,7 @@ namespace Brigand
 				this.LoadModule(moduleEl);
 			}
 
-			this.Irc = new IrcSession((a) => this.Dispatcher.BeginInvoke(a));
+			this.Irc = new IrcSession();
 			BotModule.LoadProperties(this.Irc, root);
 
 			this.Security = this.GetModule(typeof(Security)) as Security;
@@ -158,6 +158,7 @@ namespace Brigand
 		public void Run()
 		{
 			this.Dispatcher = new Dispatcher();
+			System.Threading.SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(this.Dispatcher));
 
 			this.Irc.StateChanged += new EventHandler<EventArgs>(Irc_StateChanged);
 
