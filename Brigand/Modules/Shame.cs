@@ -10,7 +10,7 @@ namespace Brigand
 	{
 		private const string AliasName = "shame";
 		private Timer _timer;
-		private Dictionary<string, Version> _results;
+		private Dictionary<string, Version> _results = new Dictionary<string, Version>();
 
 		protected override void OnInit()
 		{
