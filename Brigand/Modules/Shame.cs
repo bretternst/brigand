@@ -27,8 +27,9 @@ namespace Brigand
 				{
 					_timer.Dispose();
 				}
+				_results.Clear();
 
-				this.Irc.CtcpCommandReceived += new EventHandler<Floe.Net.CtcpEventArgs>(Irc_CtcpCommandReceived);
+				this.Irc.CtcpCommandReceived += new EventHandler<CtcpEventArgs>(Irc_CtcpCommandReceived);
 				this.Irc.SendCtcp(e.To, new CtcpCommand("VERSION"), false);
 				_timer = new Timer(this.Dispatcher, CompileResults, 10000, e.To.Name);
 			}
@@ -48,6 +49,7 @@ namespace Brigand
 
 		private void CompileResults(object sender, EventArgs e)
 		{
+			this.Irc.CtcpCommandReceived -= new EventHandler<CtcpEventArgs>(Irc_CtcpCommandReceived);
 			var chan = ((CallbackEventArgs)e).State as string;
 			var list = from v in _results
 					   where v.Value.CompareTo(this.Irc.GetType().Assembly.GetName().Version) < 0
@@ -58,6 +60,7 @@ namespace Brigand
 					string.Join(", ", list));
 				this.Irc.PrivateMessage(new IrcTarget(chan), fmt);
 			}
+			_results.Clear();
 		}
 	}
 }
