@@ -51,14 +51,17 @@ namespace Brigand
 		{
 			this.Irc.CtcpCommandReceived -= new EventHandler<CtcpEventArgs>(Irc_CtcpCommandReceived);
 			var chan = ((CallbackEventArgs)e).State as string;
+			var currentVersion = this.Irc.GetType().Assembly.GetName().Version;
 			var list = from v in _results
-					   where v.Value.CompareTo(this.Irc.GetType().Assembly.GetName().Version) < 0
+					   where v.Value.CompareTo(currentVersion) < 0
 					   select string.Format("{0} ({1})", v.Key, v.Value.ToString());
 			if (list.Any())
 			{
 				var fmt = string.Format("The following users have an old version of Floe: {0}",
 					string.Join(", ", list));
-				this.Irc.PrivateMessage(new IrcTarget(chan), fmt);
+				var target = new IrcTarget(chan);
+				this.Irc.PrivateMessage(target, fmt);
+				this.Irc.PrivateMessage(target, string.Format("The current version is {0}.", currentVersion.ToString()));
 			}
 			_results.Clear();
 		}
