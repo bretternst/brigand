@@ -59,6 +59,7 @@ namespace Brigand
 
             errOut = new StringBuilder();
             Evaluator.MessageOutput = new StringWriter(errOut);
+            Evaluator.Init(new string[] { });
 
 			foreach (string script in this.LoadScripts)
 			{
