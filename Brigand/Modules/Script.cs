@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using System.Text;
 using Floe.Net;
-using IronPython.Hosting;
+using Mono.CSharp;
 
 namespace Brigand
 {
 	public class Script : BotModule
 	{
-		private PythonEngine _engine;
+        private StringBuilder errOut;
 
 		[ModuleProperty("prefix")]
 		public string Prefix { get; set; }
@@ -56,14 +57,14 @@ namespace Brigand
 		{
 			base.OnStart();
 
-			_engine = new PythonEngine();
-			_engine.Globals.Add("bot", this.Bot);
+            errOut = new StringBuilder();
+            Evaluator.MessageOutput = new StringWriter(errOut);
 
 			foreach (string script in this.LoadScripts)
 			{
 				try
 				{
-					_engine.ExecuteFile(script);
+                    Evaluator.Evaluate(File.ReadAllText(script));
 				}
 				catch (Exception ex)
 				{
@@ -73,87 +74,28 @@ namespace Brigand
 			}
 
 			this.Irc.PrivateMessaged += new EventHandler<IrcMessageEventArgs>(Irc_PrivateMessage);
-			this.Aliases.CallAlias += new EventHandler<AliasEventArgs>(Aliases_CallAlias);
-		}
-
-		protected override void OnStop()
-		{
-			_engine.Dispose();
-
-			base.OnStop();
 		}
 
 		private void Execute(IrcTarget replyTo, string line)
 		{
 			object output = null;
 
-			try
-			{
-				output = _engine.Evaluate(line);
-			}
-			catch (IronPython.Runtime.Exceptions.PythonSyntaxErrorException)
-			{
-				try
-				{
-					_engine.Execute(line);
-				}
-				catch (Exception ex)
-				{
-					this.Irc.PrivateMessage(replyTo, string.Format("ERROR: {0}", ex.Message));
-				}
-			}
-			catch (Exception ex)
-			{
-				this.Irc.PrivateMessage(replyTo, string.Format("ERROR: {0}", ex.Message));
-			}
+            try {
+                output = Evaluator.Evaluate(line);
+            }
+            catch (Exception ex) {
+                this.Irc.PrivateMessage(replyTo, string.Format("ERROR: {0}", ex.Message));
+            }
+
+            if (errOut.Length > 0) {
+                this.Irc.PrivateMessage(replyTo, string.Format("ERROR: {0}", errOut.ToString()));
+                errOut.Clear();
+            }
 
 			if (output != null)
 			{
 				this.Irc.PrivateMessage(replyTo, output.ToString());
 			}
-		}
-
-		private void Load(string location)
-		{
-			string scriptCode = "";
-
-			location = location.Trim();
-			if (location.StartsWith("http://", StringComparison.InvariantCultureIgnoreCase) ||
-				location.StartsWith("https://", StringComparison.InvariantCultureIgnoreCase))
-			{
-				var client = new System.Net.WebClient();
-				string content = client.DownloadString(location);
-
-				try
-				{
-					content = content.Trim();
-					if (content.StartsWith("<!DOCTYPE"))
-					{
-						int firstCloseBracket = content.IndexOf('>');
-						if (firstCloseBracket >= 0 && content.Length > firstCloseBracket + 1)
-						{
-							content = content.Substring(firstCloseBracket + 1);
-						}
-					}
-					var doc = XDocument.Parse(content);
-					var preEl = doc.Descendants(doc.Root.Name.Namespace + "pre").FirstOrDefault();
-					if (preEl == null)
-					{
-						throw new Exception("Could not locate PRE element in the specified document.");
-					}
-					scriptCode = preEl.Value;
-				}
-				catch(System.Xml.XmlException)
-				{
-					scriptCode = content;
-				}
-			}
-			else
-			{
-				scriptCode = File.ReadAllText(location);
-			}
-
-			_engine.Execute(scriptCode);
 		}
 
 		private void Irc_PrivateMessage(object sender, IrcMessageEventArgs e)
@@ -177,37 +119,6 @@ namespace Brigand
 				}
 
 				this.Execute(e.To.IsChannel ? e.To : new IrcTarget(e.From), line.Substring(this.Prefix.Length));
-			}
-		}
-
-		private void Aliases_CallAlias(object sender, AliasEventArgs e)
-		{
-			if (e.Name == "load")
-			{
-				try
-				{
-					this.Security.Demand(e.From, this.ExecutePermission);
-				}
-				catch (System.Security.SecurityException)
-				{
-					return;
-				}
-
-				if (e.Arguments.Count == 1)
-				{
-					try
-					{
-						this.Load(e.Arguments[0]);
-					}
-					catch (Exception ex)
-					{
-						this.Irc.PrivateMessage(e.ReplyTo, string.Format("ERROR: {0}", ex.Message));
-					}
-				}
-				else
-				{
-					this.Irc.PrivateMessage(e.ReplyTo, "Usage: !load <url|path>");
-				}
 			}
 		}
 	}
