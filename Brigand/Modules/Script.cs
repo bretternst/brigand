@@ -81,6 +81,10 @@ namespace Brigand
 		{
 			object output = null;
 
+            line = line.Trim();
+            if (!line.EndsWith(';'))
+                line = line + ";";
+
             try {
                 output = Evaluator.Evaluate(line);
             }
