@@ -82,7 +82,7 @@ namespace Brigand
 			object output = null;
 
             line = line.Trim();
-            if (!line.EndsWith(';'))
+            if (!line.EndsWith(";"))
                 line = line + ";";
 
             try {
