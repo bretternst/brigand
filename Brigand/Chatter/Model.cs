@@ -9,7 +9,6 @@ namespace Brigand.MarkovModel
 
 	public unsafe class Model
 	{
-		private const string IdenticalReply = "I understand: ";
 		private const int SoftCutoff = 25;
 		private const int HardCutoff = 100;
 		private const int Order = 2;

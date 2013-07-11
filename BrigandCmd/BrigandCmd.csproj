@@ -10,8 +10,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Brigand</RootNamespace>
     <AssemblyName>BrigandCmd</AssemblyName>
-    <StartupObject>
-    </StartupObject>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -27,8 +25,6 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,7 +52,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="bot.config" />
-    <None Include="init.py" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

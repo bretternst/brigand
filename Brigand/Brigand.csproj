@@ -40,8 +40,6 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -99,7 +97,6 @@
     <Compile Include="Modules\Channels.cs" />
     <Compile Include="Modules\Script.cs" />
     <Compile Include="Modules\Security.cs" />
-    <Compile Include="Modules\Shame.cs" />
     <Compile Include="Rss\RssFeed.cs" />
     <Compile Include="Rss\RssWatcher.cs" />
     <Compile Include="Rss\StringExtensions.cs" />
@@ -108,6 +105,7 @@
     <Compile Include="Utility\Timer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility\StringTokenizer.cs" />
+    <Compile Include="Modules\Insult.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
@@ -130,9 +128,6 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="init.py" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
