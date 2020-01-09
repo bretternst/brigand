@@ -66,8 +66,6 @@ namespace Brigand
 
 		public Channels Channels { get; private set; }
 
-		public Script Script { get; private set; }
-
 		public void LoadConfig()
 		{
 			if (string.IsNullOrEmpty(_configPath))
@@ -121,7 +119,6 @@ namespace Brigand
 			{
 				throw new InvalidOperationException("There must be a configured Channels module.");
 			}
-			this.Script = this.GetModule(typeof(Script)) as Script;
 		}
 
 		public void SaveConfig()
